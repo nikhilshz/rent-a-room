@@ -4,5 +4,5 @@ from app.models.user import UserPublic
 
 
 class BookingWithDetails(BookingPublic):
-    room: RoomPublic
+    room: RoomPublic | None
     user: UserPublic

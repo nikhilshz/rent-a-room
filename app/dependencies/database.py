@@ -1,8 +1,9 @@
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlmodel import Session, SQLModel
+from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import app.models.booking
@@ -15,6 +16,11 @@ sqlite_url = f"sqlite+aiosqlite:///{sqlite_fine_name}"
 
 # 2. Create engine
 engine = create_async_engine(sqlite_url, echo=True)
+
+
+@event.listens_for(engine.sync_engine, "connect")
+def enable_foreign_keys(dbapi_connection, connection_record):
+    dbapi_connection.execute("PRAGMA foreign_keys=ON")
 
 
 # 3. Create db tables

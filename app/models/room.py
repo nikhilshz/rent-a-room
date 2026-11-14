@@ -25,7 +25,8 @@ class Room(RoomBase, table=True):
 
     bookings: list["Booking"] = Relationship(
         back_populates="room",
-        cascade_delete=True,
+        # cascade_delete=True,
+        passive_deletes="all",
     )
 
 
