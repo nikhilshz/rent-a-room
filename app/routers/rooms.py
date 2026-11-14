@@ -86,7 +86,8 @@ async def get_rooms(session: SessionDep, params: Annotated[SearchQueryParams, Qu
     statement = (
         statement.limit(params.limit).offset(params.offset).order_by(col(Room.id))
     )
-    rooms = await session.exec(statement).all()
+    # rooms = await session.exec(statement).all()
+    rooms = (await session.exec(statement)).all()
     return rooms
 
 
