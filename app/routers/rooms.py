@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
-from pydantic import BaseModel, Field, StringConstraints, field_validator
 from sqlmodel import col, exists, select
 
 from app.dependencies.database import SessionDep
@@ -9,35 +8,10 @@ from app.dependencies.rooms import RoomDep
 from app.errors import SERVICE_UNDER_MAINTENANCE
 from app.models.booking import Booking
 from app.models.room import Room, RoomBase, RoomPublic, RoomUpdate
+from app.schemas.query_params import RoomSearchParams
 
 # router = APIRouter(prefix="/rooms", tags=["rooms"])
 router = APIRouter()
-
-
-class SearchQueryParams(BaseModel):
-    max_price: int | None = Field(
-        default=None, ge=10, le=10_000, examples=[100, 2000, 10_000]
-    )
-
-    search: Annotated[str | None, StringConstraints(to_lower=True)] = Field(
-        default=None,
-        min_length=3,
-        max_length=10,
-        title="Search term",
-        description="Provide a keyword to look for within the room's title",
-        examples=["sunny", "bedroom", "house"],
-    )
-
-    limit: int = Field(default=10, ge=1, le=100)
-
-    offset: int = Field(default=0, ge=0)
-
-    @field_validator("search")
-    @classmethod
-    def fail_if_funny(cls, search: str):
-        if "lol" in search.lower():
-            raise ValueError("No funny business allowed")
-        return search
 
 
 MAINTENANCE_MODE = False
@@ -74,7 +48,7 @@ async def create_room(session: SessionDep, room: RoomBase):
     description="Return all rooms, Supports filtering by price and search term",
     response_description="a list of all rooms matching the filter criteria",
 )
-async def get_rooms(session: SessionDep, params: Annotated[SearchQueryParams, Query()]):
+async def get_rooms(session: SessionDep, params: Annotated[RoomSearchParams, Query()]):
     statement = select(Room)
 
     if params.max_price:

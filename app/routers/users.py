@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Query, status
-from pydantic import BaseModel, Field, StringConstraints, field_validator
 from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
@@ -10,26 +9,9 @@ from app.dependencies.users import UserDep, UserId
 from app.errors import USER_NOT_FOUND
 from app.models.booking import BookingPublic
 from app.models.user import User, UserBase, UserPublic
+from app.schemas.query_params import UserSearchParams
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-class SearchQueryParams(BaseModel):
-    name: Annotated[str | None, StringConstraints(to_lower=True)] = Field(
-        default=None,
-        min_length=2,
-        max_length=10,
-    )
-    limit: int = Field(default=10, ge=1, le=100)
-
-    offset: int = Field(default=0, ge=0)
-
-    @field_validator("name")
-    @classmethod
-    def fail_if_funny(cls, name: str | None):
-        if name is not None and "lol" in name.lower():
-            raise ValueError("No funny business allowed")
-        return name
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=UserPublic)
@@ -47,7 +29,9 @@ async def create_user(session: SessionDep, user: UserBase):
     summary="List all available users",
     response_model=list[UserPublic],
 )
-async def get_users(session: SessionDep, params: Annotated[SearchQueryParams, Query()]):
+async def get_all_users(
+    session: SessionDep, params: Annotated[UserSearchParams, Query()]
+):
     statement = select(User)
 
     if params.name:
