@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
-from sqlmodel import col, exists, select
+from sqlmodel import col, exists, func, select
 
 from app.dependencies.database import SessionDep
 from app.dependencies.rooms import RoomDep
@@ -84,6 +84,30 @@ async def get_unbooked_rooms(session: SessionDep):
     result = await session.exec(statement)
     rooms = result.all()
     return rooms
+
+
+class RoomWithBookingCount(RoomPublic):
+    booking_count: int
+
+
+@router.get(
+    "/stats", status_code=status.HTTP_200_OK, response_model=list[RoomWithBookingCount]
+)
+async def get_rooms_stats(session: SessionDep):
+    statement = (
+        select(Room, func.count(col(Booking.id).label("booking_count")))
+        .outerjoin(Booking, col(Booking.room_id) == Room.id)
+        .group_by(col(Room.id))
+        .order_by(Room.id)
+    )
+
+    result = await session.exec(statement)
+    data = result.all()
+
+    return [
+        RoomWithBookingCount(**room.model_dump(), booking_count=booking_count)
+        for room, booking_count in data
+    ]
 
 
 @router.get(

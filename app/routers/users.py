@@ -68,7 +68,7 @@ async def get_user_bookings(session: SessionDep, user_id: UserId):
     "/{user_id}/rooms", status_code=status.HTTP_200_OK, response_model=list[RoomPublic]
 )
 async def get_user_rooms(session: SessionDep, user: UserDep):
-    statement = (
+    statement = (  # inner join
         select(Room)
         .join(Booking, col(Booking.room_id) == Room.id)
         .where(col(Booking.user_id) == user.id)
