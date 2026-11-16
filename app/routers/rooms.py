@@ -111,6 +111,25 @@ async def get_rooms_stats(session: SessionDep):
 
 
 @router.get(
+    "/booked-between", status_code=status.HTTP_200_OK, response_model=list[RoomPublic]
+)
+async def get_rooms_booked_between(session: SessionDep, start_date: str, end_date: str):
+    # statement = select(Room).join(Booking, col(Booking.room_id) == Room.id)
+    statement = (
+        select(Room)
+        .join(Booking)
+        .where(col(Booking.check_in) >= start_date)
+        .where(col(Booking.check_out) <= end_date)
+        .distinct()
+        .order_by(col(Room.id))
+    )
+
+    result = await session.exec(statement)
+    rooms = result.all()
+    return rooms
+
+
+@router.get(
     "/{room_id}",
     status_code=status.HTTP_200_OK,
     response_model=RoomPublic,
